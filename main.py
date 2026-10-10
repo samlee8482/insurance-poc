@@ -1,9 +1,10 @@
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from common_codes import router as common_code_router
+from response import api_response
 
 app = FastAPI()
+app.include_router(common_code_router)
 
-# 가상 보험계약 데이터
 contracts = {
     "C1001": {
         "product_code": "P001",
@@ -20,28 +21,17 @@ contracts = {
 @app.get("/insurance/contracts/{contract_id}")
 def get_contract(contract_id: str):
 
-    # 계약 미존재
     if contract_id not in contracts:
-        return JSONResponse(
-            status_code=404,
-            content={
-                "result_code": "E1001",
-                "result_message": "계약정보가 존재하지 않습니다.",
-                "data": None
-            },
-            media_type="application/json; charset=utf-8"
+        return api_response(
+            404, "E1001", "계약정보가 존재하지 않습니다."
         )
 
-    # 정상 응답
-    return JSONResponse(
-        status_code=200,
-        content={
-            "result_code": "S0000",
-            "result_message": "정상 처리",
-            "data": {
-                "contract_id": contract_id,
-                **contracts[contract_id]
-            }
-        },
-        media_type="application/json; charset=utf-8"
+    return api_response(
+        200,
+        "S0000",
+        "정상 처리",
+        {
+            "contract_id": contract_id,
+            **contracts[contract_id]
+        }
     )
