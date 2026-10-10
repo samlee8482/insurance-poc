@@ -17,23 +17,31 @@ contracts = {
     }
 }
 
-# 보험계약 조회 API
 @app.get("/insurance/contracts/{contract_id}")
 def get_contract(contract_id: str):
 
-    # 계약번호가 존재하지 않는 경우
+    # 계약 미존재
     if contract_id not in contracts:
         return JSONResponse(
             status_code=404,
             content={
-                "error_code": "CONTRACT_NOT_FOUND",
-                "message": "계약정보가 존재하지 않습니다."
+                "result_code": "E1001",
+                "result_message": "계약정보가 존재하지 않습니다.",
+                "data": None
             },
             media_type="application/json; charset=utf-8"
         )
 
-    # 계약번호가 존재하는 경우
-    return {
-        "contract_id": contract_id,
-        **contracts[contract_id]
-    }
+    # 정상 응답
+    return JSONResponse(
+        status_code=200,
+        content={
+            "result_code": "S0000",
+            "result_message": "정상 처리",
+            "data": {
+                "contract_id": contract_id,
+                **contracts[contract_id]
+            }
+        },
+        media_type="application/json; charset=utf-8"
+    )
