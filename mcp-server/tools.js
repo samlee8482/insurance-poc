@@ -12,7 +12,10 @@ async function callInsuranceApi(path) {
     const response = await fetch(`${API_BASE_URL}${path}`, {
       method: "GET",
       headers: {
-        "Accept": "application/json; charset=utf-8"
+        "Accept": "application/json; charset=utf-8",
+
+        // 보험 REST API 호출 시 JWT 인증 토큰 전달
+        "Authorization": `Bearer ${process.env.INSURANCE_API_TOKEN || ""}`
       },
       signal: AbortSignal.timeout(5000)
     });
