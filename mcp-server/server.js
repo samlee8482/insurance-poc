@@ -1,106 +1,25 @@
-
-const { McpServer } = require("@modelcontextprotocol/sdk/server/mcp.js");
-const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js");
-const { z } = require("zod");
-
-const API_BASE_URL = "http://127.0.0.1:8000";
-
-const server = new McpServer({
-  name: "insurance-mcp-server",
-  version: "1.0.0"
-});
-
-// 공통 REST API 호출 함수
-async function callInsuranceApi(path) {
-  try {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      method: "GET",
-      headers: {
-        "Accept": "application/json; charset=utf-8"
-      },
-      signal: AbortSignal.timeout(5000)
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || result.result_code !== "S0000") {
-      return {
-        isError: true,
-        content: [{
-          type: "text",
-          text: JSON.stringify(result)
-        }]
-      };
-    }
-
-    return {
-      content: [{
-        type: "text",
-        text: JSON.stringify(result)
-      }]
-    };
-
-  } catch (error) {
-    console.error("보험 API 호출 오류:", error.message);
-
-    return {
-      isError: true,
-      content: [{
-        type: "text",
-        text: JSON.stringify({
-          result_code: "MCP_ERROR",
-          result_message: "보험 API 호출에 실패했습니다."
-        })
-      }]
-    };
-  }
-}
-
-// Tool 1. 보험계약 조회
-server.registerTool(
-  "get_insurance_contract",
-  {
-    description: "계약번호로 보험계약 정보를 조회합니다.",
-    inputSchema: {
-      contractId: z.string().min(1)
-        .describe("보험계약번호. 예: C1001")
-    }
-  },
-  async ({ contractId }) => {
-    const path =
-      `/insurance/contracts/${encodeURIComponent(contractId)}`;
-
-    return await callInsuranceApi(path);
-  }
+const { StdioServerTransport } = require(
+  "@modelcontextprotocol/sdk/server/stdio.js"
 );
 
-// Tool 2. 공통코드 조회
-server.registerTool(
-  "get_common_code",
-  {
-    description: "보험상품 또는 계약상태 공통코드의 한글 명칭을 조회합니다.",
-    inputSchema: {
-      groupCode: z.enum(["PRODUCT", "CONTRACT_STATUS"])
-        .describe("공통코드 그룹"),
-      code: z.string().min(1)
-        .describe("조회할 코드. 예: P001 또는 01")
-    }
-  },
-  async ({ groupCode, code }) => {
-    const path =
-      `/common/codes/${encodeURIComponent(groupCode)}/${encodeURIComponent(code)}`;
+const { createMcpServer } = require("./tools.js");
 
-    return await callInsuranceApi(path);
-  }
-);
+// 공통 모듈을 이용해 MCP 서버 생성
+const server = createMcpServer();
 
-// MCP 서버 실행
+// stdio 방식으로 MCP 서버 실행
 async function main() {
+
+  // 표준 입출력 기반 통신 객체 생성
   const transport = new StdioServerTransport();
+
+  // MCP 서버와 통신 객체 연결
   await server.connect(transport);
+
   console.error("보험 MCP 서버 실행 완료");
 }
 
+// 서버 실행 및 오류 처리
 main().catch((error) => {
   console.error("MCP 서버 실행 실패:", error);
   process.exit(1);
