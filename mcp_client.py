@@ -1,5 +1,5 @@
-
 import asyncio
+import os
 from pathlib import Path
 
 from mcp import ClientSession, StdioServerParameters
@@ -12,9 +12,13 @@ MCP_SERVER_PATH = BASE_DIR / "mcp-server" / "server.js"
 
 async def main():
 
+    # 현재 터미널의 환경변수를 MCP 서버에 전달
+    server_env = os.environ.copy()
+
     server_params = StdioServerParameters(
         command="node",
-        args=[str(MCP_SERVER_PATH)]
+        args=[str(MCP_SERVER_PATH)],
+        env=server_env
     )
 
     async with stdio_client(server_params) as (read, write):

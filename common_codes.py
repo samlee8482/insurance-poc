@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from response import api_response
+from auth import require_role
 
 router = APIRouter()
 
@@ -15,8 +16,14 @@ common_codes = {
     }
 }
 
+
+# 공통코드 API: USER와 ADMIN 모두 허용
 @router.get("/common/codes/{group_code}/{code}")
-def get_common_code(group_code: str, code: str):
+def get_common_code(
+    group_code: str,
+    code: str,
+    user: dict = Depends(require_role(["USER", "ADMIN"]))
+):
 
     group = common_codes.get(group_code)
 

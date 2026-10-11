@@ -1,9 +1,27 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from common_codes import router as common_code_router
 from response import api_response
+from auth import create_token, require_role
 
 app = FastAPI()
 app.include_router(common_code_router)
+
+
+# 테스트용 JWT 발급
+# 실제 운영에서는 인증 서버에서 사용자 확인 후 발급
+@app.post("/auth/token/{role}")
+def issue_token(role: str):
+
+    if role not in ["USER", "ADMIN"]:
+        return api_response(400, "E1003", "잘못된 역할입니다.")
+
+    token = create_token("poc_user", role)
+
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }
+
 
 contracts = {
     "C1001": {
@@ -18,8 +36,13 @@ contracts = {
     }
 }
 
+
+# 계약조회 API: ADMIN 권한만 허용
 @app.get("/insurance/contracts/{contract_id}")
-def get_contract(contract_id: str):
+def get_contract(
+    contract_id: str,
+    user: dict = Depends(require_role(["ADMIN"]))
+):
 
     if contract_id not in contracts:
         return api_response(
